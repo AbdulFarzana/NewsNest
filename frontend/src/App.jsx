@@ -93,6 +93,13 @@ function AppContent() {
     INITIAL_POSTS
   );
 
+  // =====================================================
+  // CLUB POSTS
+  // NEW BACKEND DATA FOR HACKATHONSVIEW
+  // =====================================================
+
+  const [clubPosts, setClubPosts] = useState([]);
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // =====================================================
@@ -229,7 +236,8 @@ function AppContent() {
         eventsResponse,
         hackathonsResponse,
         clubsResponse,
-        postsResponse
+        postsResponse,
+        clubPostsResponse
       ] = await Promise.all([
 
         fetch(
@@ -275,13 +283,29 @@ function AppContent() {
           }
         )
           .then(r => r.json())
+          .catch(() => null),
+
+        // =================================================
+        // CLUB POSTS BACKEND
+        // =================================================
+
+        fetch(
+          `${API_BASE_URL}/api/clubs`,
+          {
+            credentials: 'include'
+          }
+        )
+          .then(r => r.json())
           .catch(() => null)
 
       ]);
 
+      // ===================================================
+      // ANNOUNCEMENTS
+      // ===================================================
+
       if (
         announcementsResponse &&
-        announcementsResponse.success &&
         announcementsResponse.announcements
       ) {
 
@@ -291,9 +315,12 @@ function AppContent() {
 
       }
 
+      // ===================================================
+      // EVENTS
+      // ===================================================
+
       if (
         eventsResponse &&
-        eventsResponse.success &&
         eventsResponse.events
       ) {
 
@@ -303,9 +330,12 @@ function AppContent() {
 
       }
 
+      // ===================================================
+      // OLD HACKATHONS
+      // ===================================================
+
       if (
         hackathonsResponse &&
-        hackathonsResponse.success &&
         hackathonsResponse.hackathons
       ) {
 
@@ -315,9 +345,12 @@ function AppContent() {
 
       }
 
+      // ===================================================
+      // OLD CLUBS
+      // ===================================================
+
       if (
         clubsResponse &&
-        clubsResponse.success &&
         clubsResponse.clubs
       ) {
 
@@ -327,14 +360,32 @@ function AppContent() {
 
       }
 
+      // ===================================================
+      // COMMUNITY POSTS
+      // ===================================================
+
       if (
         postsResponse &&
-        postsResponse.success &&
         postsResponse.posts
       ) {
 
         setPosts(
           postsResponse.posts
+        );
+
+      }
+
+      // ===================================================
+      // NEW CLUB POSTS
+      // ===================================================
+
+      if (
+        clubPostsResponse &&
+        clubPostsResponse.posts
+      ) {
+
+        setClubPosts(
+          clubPostsResponse.posts
         );
 
       }
@@ -691,7 +742,177 @@ function AppContent() {
   };
 
   // =====================================================
-  // ADD POST
+  // CREATE CLUB POST
+  // =====================================================
+
+  const handleCreateClubPost = async newPost => {
+
+    try {
+
+      const formData = new FormData();
+
+      formData.append(
+        'club',
+        newPost.club
+      );
+
+      formData.append(
+        'type',
+        newPost.type
+      );
+
+      formData.append(
+        'title',
+        newPost.title
+      );
+
+      formData.append(
+        'description',
+        newPost.description
+      );
+
+      formData.append(
+        'venue',
+        newPost.venue || ''
+      );
+
+      formData.append(
+        'startDateTime',
+        newPost.startDateTime || ''
+      );
+
+      formData.append(
+        'endDateTime',
+        newPost.endDateTime || ''
+      );
+
+      formData.append(
+        'registrationDeadline',
+        newPost.registrationDeadline || ''
+      );
+
+      formData.append(
+        'registrationLink',
+        newPost.registrationLink || ''
+      );
+
+      if (newPost.imageFile) {
+
+        formData.append(
+          'image',
+          newPost.imageFile
+        );
+
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/clubs`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+
+        alert(
+          data.message ||
+          'Failed to create club post'
+        );
+
+        return false;
+
+      }
+
+      if (data.post) {
+
+        setClubPosts(prev => [
+          data.post,
+          ...prev
+        ]);
+
+        return true;
+
+      }
+
+      return false;
+
+    } catch (error) {
+
+      console.error(
+        'Create club post error:',
+        error
+      );
+
+      alert(
+        'Unable to connect to server'
+      );
+
+      return false;
+
+    }
+
+  };
+
+  // =====================================================
+  // DELETE CLUB POST
+  // =====================================================
+
+  const handleDeleteClubPost = async id => {
+
+    try {
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/clubs/${id}`,
+        {
+          method: 'DELETE',
+          credentials: 'include'
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+
+        alert(
+          data.message ||
+          'Failed to delete club post'
+        );
+
+        return;
+
+      }
+
+      setClubPosts(prev =>
+        prev.filter(
+          post =>
+            post.id !== id &&
+            post._id !== id
+        )
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Delete club post error:',
+        error
+      );
+
+      alert(
+        'Unable to connect to server'
+      );
+
+    }
+
+  };
+
+  // =====================================================
+  // ADD COMMUNITY POST
   // =====================================================
 
   const handleAddPost = async newPost => {
@@ -739,10 +960,7 @@ function AppContent() {
 
       }
 
-      if (
-        data.success &&
-        data.post
-      ) {
+      if (data.post) {
 
         setPosts(prev => [
           data.post,
@@ -809,12 +1027,8 @@ function AppContent() {
             postId.toString()
             ? {
               ...post,
-
-              likes:
-                data.likes,
-
-              isLiked:
-                data.isLiked
+              likes: data.likes,
+              isLiked: data.isLiked
             }
             : post
         )
@@ -878,10 +1092,7 @@ function AppContent() {
 
       }
 
-      if (
-        data.success &&
-        data.post
-      ) {
+      if (data.post) {
 
         setPosts(prev =>
           prev.map(post =>
@@ -1054,48 +1265,79 @@ function AppContent() {
 
   const handleAddAnnouncement = async newAnn => {
 
-    setAnnouncements(prev => [
-      newAnn,
-      ...prev
-    ]);
-
     try {
+
+      const formData = new FormData();
+
+      formData.append(
+        'title',
+        newAnn.title
+      );
+
+      formData.append(
+        'content',
+        newAnn.content
+      );
+
+      formData.append(
+        'category',
+        newAnn.category
+      );
+
+      formData.append(
+        'link',
+        newAnn.link || ''
+      );
+
+      if (newAnn.imageFile) {
+
+        formData.append(
+          'image',
+          newAnn.imageFile
+        );
+
+      }
 
       const response = await fetch(
         `${API_BASE_URL}/api/announcements`,
         {
           method: 'POST',
           credentials: 'include',
-
-          headers: {
-            'Content-Type':
-              'application/json'
-          },
-
-          body:
-            JSON.stringify(newAnn)
+          body: formData
         }
       );
 
       const data =
         await response.json();
 
-      if (
-        data.success &&
-        data.announcements
-      ) {
+      if (!response.ok) {
 
-        setAnnouncements(
-          data.announcements
+        alert(
+          data.message ||
+          'Failed to create announcement'
         );
+
+        return;
+      }
+
+      if (data.announcement) {
+
+        setAnnouncements(prev => [
+          data.announcement,
+          ...prev
+        ]);
 
       }
 
     } catch (error) {
 
       console.error(
-        'Announcement error:',
+        'Add announcement error:',
         error
+      );
+
+      alert(
+        'Unable to connect to server'
       );
 
     }
@@ -1107,12 +1349,6 @@ function AppContent() {
   // =====================================================
 
   const handleDeleteAnnouncement = async id => {
-
-    setAnnouncements(prev =>
-      prev.filter(
-        ann => ann.id !== id
-      )
-    );
 
     try {
 
@@ -1127,22 +1363,34 @@ function AppContent() {
       const data =
         await response.json();
 
-      if (
-        data.success &&
-        data.announcements
-      ) {
+      if (!response.ok) {
 
-        setAnnouncements(
-          data.announcements
+        alert(
+          data.message ||
+          'Failed to delete announcement'
         );
 
+        return;
+
       }
+
+      setAnnouncements(prev =>
+        prev.filter(
+          announcement =>
+            announcement.id !== id &&
+            announcement._id !== id
+        )
+      );
 
     } catch (error) {
 
       console.error(
         'Delete announcement error:',
         error
+      );
+
+      alert(
+        'Unable to connect to server'
       );
 
     }
@@ -1178,10 +1426,7 @@ function AppContent() {
       const data =
         await response.json();
 
-      if (
-        data.success &&
-        data.user
-      ) {
+      if (data.user) {
 
         setUser(data.user);
 
@@ -1227,6 +1472,8 @@ function AppContent() {
     setPosts(
       INITIAL_POSTS
     );
+
+    setClubPosts([]);
 
     setSearchQuery('');
 
@@ -1400,13 +1647,6 @@ function AppContent() {
 
     <Routes>
 
-      {/* =================================================
-          LANDING PAGE
-
-          IMPORTANT FIX:
-          NEVER automatically navigate to dashboard here.
-      ================================================= */}
-
       <Route
         path="/"
         element={
@@ -1449,10 +1689,6 @@ function AppContent() {
 
         }
       />
-
-      {/* =================================================
-          LOGIN PAGE
-      ================================================= */}
 
       <Route
         path="/login"
@@ -1504,10 +1740,6 @@ function AppContent() {
         }
       />
 
-      {/* =================================================
-          DASHBOARD
-      ================================================= */}
-
       <Route
         path="/dashboard"
         element={
@@ -1539,10 +1771,6 @@ function AppContent() {
 
         }
       />
-
-      {/* =================================================
-          COMMUNITY
-      ================================================= */}
 
       <Route
         path="/community"
@@ -1578,10 +1806,6 @@ function AppContent() {
         }
       />
 
-      {/* =================================================
-          ANNOUNCEMENTS
-      ================================================= */}
-
       <Route
         path="/announcements"
         element={
@@ -1589,28 +1813,17 @@ function AppContent() {
           <ProtectedLayout>
 
             <AnnouncementsView
-              announcements={
-                announcements
-              }
-              onAddAnnouncement={
-                handleAddAnnouncement
-              }
-              onDeleteAnnouncement={
-                handleDeleteAnnouncement
-              }
-              searchQuery={
-                searchQuery
-              }
+              currentUser={user}
+              announcements={announcements}
+              onAddAnnouncement={handleAddAnnouncement}
+              onDeleteAnnouncement={handleDeleteAnnouncement}
+              searchQuery={searchQuery}
             />
 
           </ProtectedLayout>
 
         }
       />
-
-      {/* =================================================
-          EVENTS
-      ================================================= */}
 
       <Route
         path="/events"
@@ -1636,7 +1849,8 @@ function AppContent() {
       />
 
       {/* =================================================
-          HACKATHONS
+          HACKATHONS AND CLUBS
+          CONNECTED TO NEW CLUB POSTS BACKEND
       ================================================= */}
 
       <Route
@@ -1646,31 +1860,22 @@ function AppContent() {
           <ProtectedLayout>
 
             <HackathonsView
-              hackathons={
-                hackathons
-              }
-              clubs={
-                clubs
-              }
-              onRegisterHackathon={
-                handleRegisterHackathon
-              }
-              onJoinClub={
-                handleJoinClub
-              }
-              searchQuery={
-                searchQuery
-              }
+              currentUser={user}
+              clubPosts={clubPosts}
+              onCreateClubPost={handleCreateClubPost}
+              onDeleteClubPost={handleDeleteClubPost}
+              searchQuery={searchQuery}
+
+              hackathons={hackathons}
+              clubs={clubs}
+              onRegisterHackathon={handleRegisterHackathon}
+              onJoinClub={handleJoinClub}
             />
 
           </ProtectedLayout>
 
         }
       />
-
-      {/* =================================================
-          PROFILE
-      ================================================= */}
 
       <Route
         path="/profile"
@@ -1700,10 +1905,6 @@ function AppContent() {
         }
       />
 
-      {/* =================================================
-          SETTINGS
-      ================================================= */}
-
       <Route
         path="/settings"
         element={
@@ -1720,10 +1921,6 @@ function AppContent() {
 
         }
       />
-
-      {/* =================================================
-          UNKNOWN ROUTE
-      ================================================= */}
 
       <Route
         path="*"

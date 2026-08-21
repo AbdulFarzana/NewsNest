@@ -1,28 +1,44 @@
-import express from 'express';
-import { db } from '../db.js';
+const express = require("express");
+
+const {
+  getClubPosts,
+  createClubPost,
+  getClubPostImage,
+  deleteClubPost
+} = require("../controller/clubController");
+
+const protect = require(
+  "../middleware/authmiddleware"
+);
+
+const upload = require(
+  "../middleware/clubUpload"
+);
 
 const router = express.Router();
 
-// GET clubs
-router.get('/', (req, res) => {
-  res.json({ success: true, clubs: db.clubs });
-});
+router.get(
+  "/",
+  protect,
+  getClubPosts
+);
 
-// POST join/leave club
-router.post('/:id/join', (req, res) => {
-  const { id } = req.params;
-  const club = db.clubs.find(c => c.id === id);
+router.post(
+  "/",
+  protect,
+  upload.single("image"),
+  createClubPost
+);
 
-  if (!club) {
-    return res.status(404).json({ success: false, message: 'Club not found.' });
-  }
+router.get(
+  "/:id/image",
+  getClubPostImage
+);
 
-  club.isJoined = !club.isJoined;
+router.delete(
+  "/:id",
+  protect,
+  deleteClubPost
+);
 
-  // Update joined clubs count
-  db.user.clubsCount = db.clubs.filter(c => c.isJoined).length;
-
-  res.json({ success: true, club, clubs: db.clubs, user: db.user });
-});
-
-export default router;
+module.exports = router;

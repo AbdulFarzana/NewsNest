@@ -1,42 +1,39 @@
-import express from 'express';
-import { db } from '../db.js';
+const express = require("express");
+
+const {
+  getAnnouncements,
+  createAnnouncement,
+  deleteAnnouncement,
+  getAnnouncementImage
+} = require("../controller/announcementController");
+
+const protect = require("../middleware/authmiddleware");
+const upload = require("../middleware/announcementUpload");
 
 const router = express.Router();
 
-// GET all announcements
-router.get('/', (req, res) => {
-  res.json({ success: true, announcements: db.announcements });
-});
+router.get(
+  "/",
+  protect,
+  getAnnouncements
+);
 
-// POST new announcement
-router.post('/', (req, res) => {
-  const { title, description, category, author, priority, isPinned } = req.body;
+router.post(
+  "/",
+  protect,
+  upload.single("image"),
+  createAnnouncement
+);
 
-  if (!title || !description) {
-    return res.status(400).json({ success: false, message: 'Title and description are required.' });
-  }
+router.get(
+  "/:id/image",
+  getAnnouncementImage
+);
 
-  const newAnn = {
-    id: `ann-${Date.now()}`,
-    title,
-    description,
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    category: category || 'General',
-    author: author || db.user.name,
-    priority: priority || 'Medium',
-    isPinned: Boolean(isPinned)
-  };
+router.delete(
+  "/:id",
+  protect,
+  deleteAnnouncement
+);
 
-  db.announcements.unshift(newAnn);
-
-  res.json({ success: true, announcement: newAnn, announcements: db.announcements, message: 'Official announcement posted!' });
-});
-
-// DELETE announcement
-router.delete('/:id', (req, res) => {
-  const { id } = req.params;
-  db.announcements = db.announcements.filter(a => a.id !== id);
-  res.json({ success: true, announcements: db.announcements, message: 'Announcement removed.' });
-});
-
-export default router;
+module.exports = router;

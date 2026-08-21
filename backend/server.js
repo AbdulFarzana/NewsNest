@@ -10,6 +10,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 
 const connectDB =
   require("./config/db");
@@ -20,6 +21,14 @@ const authRoutes =
 const postRoutes =
   require("./routes/posts");
 
+const announcementRoutes =
+  require("./routes/announcements");
+
+const eventRoutes =
+  require("./routes/events");
+
+const clubRoutes =
+  require("./routes/clubs");
 const app = express();
 
 connectDB();
@@ -55,6 +64,27 @@ app.use(
 app.use(
   "/api/posts",
   postRoutes
+);
+
+app.use(
+  "/api/announcements",
+  announcementRoutes
+);
+
+app.use(
+  "/api/events",
+  eventRoutes
+);
+
+app.use(
+  "/api/clubs",
+  clubRoutes
+);
+app.use(
+  "/uploads",
+  express.static(
+    path.join(__dirname, "uploads")
+  )
 );
 
 const PORT =
