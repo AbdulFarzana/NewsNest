@@ -56,20 +56,11 @@ export default function App() {
 }
 
 function AppContent() {
-
   const navigate = useNavigate();
   const location = useLocation();
 
-  // =====================================================
-  // AUTHENTICATION
-  // =====================================================
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
-
-  // =====================================================
-  // APPLICATION STATE
-  // =====================================================
 
   const [user, setUser] = useState(INITIAL_USER);
 
@@ -93,25 +84,63 @@ function AppContent() {
     INITIAL_POSTS
   );
 
-  // =====================================================
-  // CLUB POSTS
-  // NEW BACKEND DATA FOR HACKATHONSVIEW
-  // =====================================================
-
   const [clubPosts, setClubPosts] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // =====================================================
-  // CHECK AUTHENTICATION
-  // =====================================================
+  // ==========================================
+  // SETTINGS STATES
+  // ==========================================
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('newsnest-theme') || 'dark';
+  });
+
+  const [showRecentlyLikedPosts, setShowRecentlyLikedPosts] = useState(() => {
+    const savedValue = localStorage.getItem(
+      'newsnest-show-liked-posts'
+    );
+
+    return savedValue === null
+      ? true
+      : savedValue === 'true';
+  });
+
+  // ==========================================
+  // APPLY THEME
+  // ==========================================
 
   useEffect(() => {
+    localStorage.setItem(
+      'newsnest-theme',
+      theme
+    );
 
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  // ==========================================
+  // SAVE LIKED POSTS VISIBILITY
+  // ==========================================
+
+  useEffect(() => {
+    localStorage.setItem(
+      'newsnest-show-liked-posts',
+      showRecentlyLikedPosts.toString()
+    );
+  }, [showRecentlyLikedPosts]);
+
+  // ==========================================
+  // CHECK AUTHENTICATION
+  // ==========================================
+
+  useEffect(() => {
     const checkAuthentication = async () => {
-
       try {
-
         const response = await fetch(
           `${API_BASE_URL}/api/auth/me`,
           {
@@ -125,22 +154,17 @@ function AppContent() {
         console.log('Auth check:', data);
 
         if (response.ok && data.user) {
-
           setUser(prev => ({
             ...prev,
             ...data.user
           }));
 
           setIsLoggedIn(true);
-
         } else {
-
           setIsLoggedIn(false);
-
         }
 
       } catch (error) {
-
         console.error(
           'Authentication check error:',
           error
@@ -149,88 +173,55 @@ function AppContent() {
         setIsLoggedIn(false);
 
       } finally {
-
         setAuthLoading(false);
-
       }
-
     };
 
     checkAuthentication();
 
   }, []);
 
-  // =====================================================
-  // CURRENT VIEW
-  // =====================================================
+  // ==========================================
+  // GET ACTIVE VIEW
+  // ==========================================
 
   const getActiveView = () => {
-
     const path = location.pathname;
 
-    if (path === '/') {
-      return 'LANDING';
-    }
-
-    if (path === '/login') {
-      return 'LOGIN';
-    }
-
-    if (path === '/dashboard') {
-      return 'DASHBOARD';
-    }
-
-    if (path === '/community') {
-      return 'COMMUNITY_FEED';
-    }
-
-    if (path === '/announcements') {
-      return 'ANNOUNCEMENTS';
-    }
-
-    if (path === '/events') {
-      return 'EVENTS';
-    }
-
-    if (path === '/hackathons') {
-      return 'HACKATHONS';
-    }
-
-    if (path === '/profile') {
-      return 'PROFILE';
-    }
-
-    if (path === '/settings') {
-      return 'SETTINGS';
-    }
+    if (path === '/') return 'LANDING';
+    if (path === '/login') return 'LOGIN';
+    if (path === '/dashboard') return 'DASHBOARD';
+    if (path === '/community') return 'COMMUNITY_FEED';
+    if (path === '/announcements') return 'ANNOUNCEMENTS';
+    if (path === '/events') return 'EVENTS';
+    if (path === '/hackathons') return 'HACKATHONS';
+    if (path === '/profile') return 'PROFILE';
+    if (path === '/settings') return 'SETTINGS';
 
     return 'LANDING';
   };
 
   const activeView = getActiveView();
 
-  // =====================================================
-  // CHANGE VIEW
-  // =====================================================
+  // ==========================================
+  // NAVIGATION
+  // ==========================================
 
   const handleViewChange = view => {
-
     const path = VIEW_TO_PATH[view];
 
     if (path) {
+      setSearchQuery('');
       navigate(path);
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // FETCH ALL DATA
-  // =====================================================
+  // ==========================================
 
   const fetchAllData = async () => {
-
     try {
-
       const [
         announcementsResponse,
         eventsResponse,
@@ -285,10 +276,6 @@ function AppContent() {
           .then(r => r.json())
           .catch(() => null),
 
-        // =================================================
-        // CLUB POSTS BACKEND
-        // =================================================
-
         fetch(
           `${API_BASE_URL}/api/clubs`,
           {
@@ -297,148 +284,105 @@ function AppContent() {
         )
           .then(r => r.json())
           .catch(() => null)
-
       ]);
-
-      // ===================================================
-      // ANNOUNCEMENTS
-      // ===================================================
 
       if (
         announcementsResponse &&
         announcementsResponse.announcements
       ) {
-
         setAnnouncements(
           announcementsResponse.announcements
         );
-
       }
-
-      // ===================================================
-      // EVENTS
-      // ===================================================
 
       if (
         eventsResponse &&
         eventsResponse.events
       ) {
-
         setEvents(
           eventsResponse.events
         );
-
       }
-
-      // ===================================================
-      // OLD HACKATHONS
-      // ===================================================
 
       if (
         hackathonsResponse &&
         hackathonsResponse.hackathons
       ) {
-
         setHackathons(
           hackathonsResponse.hackathons
         );
-
       }
-
-      // ===================================================
-      // OLD CLUBS
-      // ===================================================
 
       if (
         clubsResponse &&
         clubsResponse.clubs
       ) {
-
         setClubs(
           clubsResponse.clubs
         );
-
       }
-
-      // ===================================================
-      // COMMUNITY POSTS
-      // ===================================================
 
       if (
         postsResponse &&
         postsResponse.posts
       ) {
-
         setPosts(
           postsResponse.posts
         );
-
       }
-
-      // ===================================================
-      // NEW CLUB POSTS
-      // ===================================================
 
       if (
         clubPostsResponse &&
         clubPostsResponse.posts
       ) {
-
         setClubPosts(
           clubPostsResponse.posts
         );
-
       }
 
     } catch (error) {
-
       console.error(
         'Backend sync warning:',
         error
       );
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // FETCH DATA AFTER LOGIN
-  // =====================================================
+  // ==========================================
 
   useEffect(() => {
-
     if (isLoggedIn) {
       fetchAllData();
     }
-
   }, [isLoggedIn]);
 
-  // =====================================================
+  // ==========================================
   // CTRL + K SEARCH
-  // =====================================================
+  // ==========================================
 
   useEffect(() => {
-
     const handleKeyDown = e => {
-
       if (
         (e.ctrlKey || e.metaKey) &&
         e.key.toLowerCase() === 'k'
       ) {
-
         e.preventDefault();
 
         const searchInput =
-          document.querySelector(
-            'input[type="text"]'
+          document.getElementById(
+            'global-search'
           );
 
         if (searchInput) {
           searchInput.focus();
         }
-
       }
 
+      if (e.key === 'Escape') {
+        setSearchQuery('');
+      }
     };
 
     window.addEventListener(
@@ -447,39 +391,36 @@ function AppContent() {
     );
 
     return () => {
-
       window.removeEventListener(
         'keydown',
         handleKeyDown
       );
-
     };
 
   }, []);
 
-  // =====================================================
+  // ==========================================
   // UPDATE USER STATS
-  // =====================================================
+  // ==========================================
 
   useEffect(() => {
-
     if (!isLoggedIn) {
       return;
     }
 
     const registeredEventsCount =
       events.filter(
-        e => e.isRegistered
+        event => event.isRegistered
       ).length;
 
     const registeredHackathonsCount =
       hackathons.filter(
-        h => h.isRegistered
+        hackathon => hackathon.isRegistered
       ).length;
 
     const joinedClubsCount =
       clubs.filter(
-        c => c.isJoined
+        club => club.isJoined
       ).length;
 
     setUser(prev => ({
@@ -500,19 +441,16 @@ function AppContent() {
     isLoggedIn
   ]);
 
-  // =====================================================
+  // ==========================================
   // LOGIN SUCCESS
-  // =====================================================
+  // ==========================================
 
   const handleLoginSuccess = async userData => {
-
     if (userData) {
-
       setUser(prev => ({
         ...prev,
         ...userData
       }));
-
     }
 
     setIsLoggedIn(true);
@@ -520,17 +458,14 @@ function AppContent() {
     navigate('/dashboard');
 
     await fetchAllData();
-
   };
 
-  // =====================================================
+  // ==========================================
   // LOGOUT
-  // =====================================================
+  // ==========================================
 
   const handleLogout = async () => {
-
     try {
-
       await fetch(
         `${API_BASE_URL}/api/auth/logout`,
         {
@@ -538,43 +473,106 @@ function AppContent() {
           credentials: 'include'
         }
       );
-
     } catch (error) {
-
       console.error(
         'Logout error:',
         error
       );
-
     }
 
     setIsLoggedIn(false);
     setSearchQuery('');
 
     navigate('/');
-
   };
 
-  // =====================================================
+  // ==========================================
+  // DELETE ACCOUNT
+  // ==========================================
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to permanently delete your NewsNest account? This action cannot be undone.'
+    );
+
+    if (!confirmed) {
+      return {
+        success: false,
+        cancelled: true
+      };
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/auth/delete-account`,
+        {
+          method: 'DELETE',
+          credentials: 'include'
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message:
+            data.message ||
+            'Failed to delete account'
+        };
+      }
+
+      setIsLoggedIn(false);
+
+      setUser(INITIAL_USER);
+      setAnnouncements(INITIAL_ANNOUNCEMENTS);
+      setEvents(INITIAL_EVENTS);
+      setHackathons(INITIAL_HACKATHONS);
+      setClubs(INITIAL_CLUBS);
+      setPosts(INITIAL_POSTS);
+      setClubPosts([]);
+      setSearchQuery('');
+
+      navigate('/');
+
+      return {
+        success: true,
+        message:
+          'Your account has been deleted successfully.'
+      };
+
+    } catch (error) {
+      console.error(
+        'Delete account error:',
+        error
+      );
+
+      return {
+        success: false,
+        message:
+          'Unable to connect to server'
+      };
+    }
+  };
+
+  // ==========================================
   // REGISTER EVENT
-  // =====================================================
+  // ==========================================
 
   const handleRegisterEvent = async id => {
-
     setEvents(prev =>
-      prev.map(evt =>
-        evt.id === id
+      prev.map(event =>
+        event.id === id
           ? {
-            ...evt,
+            ...event,
             isRegistered:
-              !evt.isRegistered
+              !event.isRegistered
           }
-          : evt
+          : event
       )
     );
 
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/events/${id}/rsvp`,
         {
@@ -583,60 +581,50 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (
         data.success &&
         data.events
       ) {
-
-        setEvents(
-          data.events
-        );
-
+        setEvents(data.events);
       }
 
       if (data.user) {
-
         setUser(prev => ({
           ...prev,
           ...data.user
         }));
-
       }
 
     } catch (error) {
-
       console.error(
         'RSVP event error:',
         error
       );
 
+      fetchAllData();
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // REGISTER HACKATHON
-  // =====================================================
+  // ==========================================
 
   const handleRegisterHackathon = async id => {
-
     setHackathons(prev =>
-      prev.map(hack =>
-        hack.id === id
+      prev.map(hackathon =>
+        hackathon.id === id
           ? {
-            ...hack,
+            ...hackathon,
             isRegistered:
-              !hack.isRegistered
+              !hackathon.isRegistered
           }
-          : hack
+          : hackathon
       )
     );
 
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/hackathons/${id}/rsvp`,
         {
@@ -645,46 +633,37 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (
         data.success &&
         data.hackathons
       ) {
-
-        setHackathons(
-          data.hackathons
-        );
-
+        setHackathons(data.hackathons);
       }
 
       if (data.user) {
-
         setUser(prev => ({
           ...prev,
           ...data.user
         }));
-
       }
 
     } catch (error) {
-
       console.error(
         'RSVP hackathon error:',
         error
       );
 
+      fetchAllData();
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // JOIN CLUB
-  // =====================================================
+  // ==========================================
 
   const handleJoinClub = async id => {
-
     setClubs(prev =>
       prev.map(club =>
         club.id === id
@@ -698,7 +677,6 @@ function AppContent() {
     );
 
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/clubs/${id}/join`,
         {
@@ -707,48 +685,38 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (
         data.success &&
         data.clubs
       ) {
-
-        setClubs(
-          data.clubs
-        );
-
+        setClubs(data.clubs);
       }
 
       if (data.user) {
-
         setUser(prev => ({
           ...prev,
           ...data.user
         }));
-
       }
 
     } catch (error) {
-
       console.error(
         'Join club error:',
         error
       );
 
+      fetchAllData();
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // CREATE CLUB POST
-  // =====================================================
+  // ==========================================
 
   const handleCreateClubPost = async newPost => {
-
     try {
-
       const formData = new FormData();
 
       formData.append(
@@ -797,12 +765,10 @@ function AppContent() {
       );
 
       if (newPost.imageFile) {
-
         formData.append(
           'image',
           newPost.imageFile
         );
-
       }
 
       const response = await fetch(
@@ -814,35 +780,29 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to create club post'
         );
 
         return false;
-
       }
 
       if (data.post) {
-
         setClubPosts(prev => [
           data.post,
           ...prev
         ]);
 
         return true;
-
       }
 
       return false;
 
     } catch (error) {
-
       console.error(
         'Create club post error:',
         error
@@ -853,19 +813,15 @@ function AppContent() {
       );
 
       return false;
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // DELETE CLUB POST
-  // =====================================================
+  // ==========================================
 
   const handleDeleteClubPost = async id => {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/clubs/${id}`,
         {
@@ -874,18 +830,15 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to delete club post'
         );
 
         return;
-
       }
 
       setClubPosts(prev =>
@@ -897,7 +850,6 @@ function AppContent() {
       );
 
     } catch (error) {
-
       console.error(
         'Delete club post error:',
         error
@@ -906,19 +858,15 @@ function AppContent() {
       alert(
         'Unable to connect to server'
       );
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // ADD COMMUNITY POST
-  // =====================================================
+  // ==========================================
 
   const handleAddPost = async newPost => {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/posts`,
         {
@@ -931,53 +879,33 @@ function AppContent() {
           },
 
           body: JSON.stringify({
-            content:
-              newPost.content,
-
-            category:
-              newPost.category,
-
-            clubName:
-              newPost.clubName,
-
-            images:
-              newPost.images
+            content: newPost.content,
+            category: newPost.category,
+            clubName: newPost.clubName,
+            images: newPost.images
           })
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to create post'
         );
 
         return;
-
       }
 
       if (data.post) {
-
         setPosts(prev => [
           data.post,
           ...prev
         ]);
-
-        setUser(prev => ({
-          ...prev,
-
-          postsCount:
-            (prev.postsCount || 0) + 1
-        }));
-
       }
 
     } catch (error) {
-
       console.error(
         'Add post error:',
         error
@@ -986,19 +914,15 @@ function AppContent() {
       alert(
         'Unable to connect to server'
       );
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // LIKE POST
-  // =====================================================
+  // ==========================================
 
   const handleLikePost = async postId => {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/like`,
         {
@@ -1007,59 +931,43 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
-        alert(
-          data.message ||
-          'Failed to update like'
-        );
-
+        alert(data.message || 'Failed to update like');
         return;
-
       }
 
       setPosts(prev =>
-        prev.map(post =>
-          post.id.toString() ===
-            postId.toString()
-            ? {
+        prev.map(post => {
+          const currentPostId = post.id || post._id;
+
+          if (currentPostId.toString() === postId.toString()) {
+            return {
               ...post,
-              likes: data.likes,
+              likes: data.likes ?? 0,
               isLiked: data.isLiked
-            }
-            : post
-        )
+            };
+          }
+
+          return post;
+        })
       );
 
     } catch (error) {
-
-      console.error(
-        'Like error:',
-        error
-      );
-
-      alert(
-        'Unable to connect to server'
-      );
-
+      console.error('Like error:', error);
+      alert('Unable to connect to server');
     }
-
   };
-
-  // =====================================================
+  // ==========================================
   // ADD COMMENT
-  // =====================================================
+  // ==========================================
 
   const handleAddComment = async (
     postId,
     newCommentObj
   ) => {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/comment`,
         {
@@ -1078,22 +986,18 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to add comment'
         );
 
         return;
-
       }
 
       if (data.post) {
-
         setPosts(prev =>
           prev.map(post =>
             post.id.toString() ===
@@ -1102,11 +1006,9 @@ function AppContent() {
               : post
           )
         );
-
       }
 
     } catch (error) {
-
       console.error(
         'Comment error:',
         error
@@ -1115,19 +1017,15 @@ function AppContent() {
       alert(
         'Unable to connect to server'
       );
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // DELETE POST
-  // =====================================================
+  // ==========================================
 
   const handleDeletePost = async postId => {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}`,
         {
@@ -1136,18 +1034,15 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to delete post'
         );
 
         return;
-
       }
 
       setPosts(prev =>
@@ -1158,18 +1053,7 @@ function AppContent() {
         )
       );
 
-      setUser(prev => ({
-        ...prev,
-
-        postsCount:
-          Math.max(
-            0,
-            (prev.postsCount || 0) - 1
-          )
-      }));
-
     } catch (error) {
-
       console.error(
         'Delete post error:',
         error
@@ -1178,22 +1062,18 @@ function AppContent() {
       alert(
         'Unable to connect to server'
       );
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // DELETE COMMENT
-  // =====================================================
+  // ==========================================
 
   const handleDeleteComment = async (
     postId,
     commentId
   ) => {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/comment/${commentId}`,
         {
@@ -1202,34 +1082,27 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to delete comment'
         );
 
         return;
-
       }
 
       setPosts(prev =>
         prev.map(post => {
-
           if (
             post.id.toString() !==
             postId.toString()
           ) {
-
             return post;
-
           }
 
           return {
-
             ...post,
 
             comments:
@@ -1238,14 +1111,11 @@ function AppContent() {
                   comment.id.toString() !==
                   commentId.toString()
               )
-
           };
-
         })
       );
 
     } catch (error) {
-
       console.error(
         'Delete comment error:',
         error
@@ -1254,19 +1124,15 @@ function AppContent() {
       alert(
         'Unable to connect to server'
       );
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // ADD ANNOUNCEMENT
-  // =====================================================
+  // ==========================================
 
   const handleAddAnnouncement = async newAnn => {
-
     try {
-
       const formData = new FormData();
 
       formData.append(
@@ -1290,12 +1156,10 @@ function AppContent() {
       );
 
       if (newAnn.imageFile) {
-
         formData.append(
           'image',
           newAnn.imageFile
         );
-
       }
 
       const response = await fetch(
@@ -1307,11 +1171,9 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to create announcement'
@@ -1321,16 +1183,13 @@ function AppContent() {
       }
 
       if (data.announcement) {
-
         setAnnouncements(prev => [
           data.announcement,
           ...prev
         ]);
-
       }
 
     } catch (error) {
-
       console.error(
         'Add announcement error:',
         error
@@ -1339,19 +1198,15 @@ function AppContent() {
       alert(
         'Unable to connect to server'
       );
-
     }
-
   };
 
-  // =====================================================
+  // ==========================================
   // DELETE ANNOUNCEMENT
-  // =====================================================
+  // ==========================================
 
   const handleDeleteAnnouncement = async id => {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/announcements/${id}`,
         {
@@ -1360,18 +1215,15 @@ function AppContent() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
         alert(
           data.message ||
           'Failed to delete announcement'
         );
 
         return;
-
       }
 
       setAnnouncements(prev =>
@@ -1383,7 +1235,6 @@ function AppContent() {
       );
 
     } catch (error) {
-
       console.error(
         'Delete announcement error:',
         error
@@ -1392,204 +1243,222 @@ function AppContent() {
       alert(
         'Unable to connect to server'
       );
-
     }
-
   };
 
-  // =====================================================
-  // UPDATE USER
-  // =====================================================
+  // ==========================================
+  // UPDATE USER PROFILE
+  // ==========================================
 
-  const handleUpdateUser = async updatedUser => {
-
-    setUser(updatedUser);
-
+  const handleUpdateUser = async (
+    updatedUser,
+    avatarFile
+  ) => {
     try {
+      const formData = new FormData();
+
+      formData.append(
+        'name',
+        updatedUser.name || ''
+      );
+
+      formData.append(
+        'phone',
+        updatedUser.phone || ''
+      );
+
+      formData.append(
+        'rollNumber',
+        updatedUser.rollNumber || ''
+      );
+
+      formData.append(
+        'location',
+        updatedUser.location || ''
+      );
+
+      formData.append(
+        'department',
+        updatedUser.department || ''
+      );
+
+      formData.append(
+        'year',
+        updatedUser.year || ''
+      );
+
+      formData.append(
+        'interestedClubs',
+        JSON.stringify(
+          updatedUser.interestedClubs || []
+        )
+      );
+
+      if (avatarFile) {
+        formData.append(
+          'avatar',
+          avatarFile
+        );
+      }
 
       const response = await fetch(
         `${API_BASE_URL}/api/auth/profile`,
         {
           method: 'PUT',
           credentials: 'include',
-
-          headers: {
-            'Content-Type':
-              'application/json'
-          },
-
-          body:
-            JSON.stringify(updatedUser)
+          body: formData
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
-      if (data.user) {
-
-        setUser(data.user);
-
+      if (!response.ok) {
+        return {
+          success: false,
+          message:
+            data.message ||
+            'Failed to update profile'
+        };
       }
 
-    } catch (error) {
+      if (
+        data.success &&
+        data.user
+      ) {
+        setUser(prev => ({
+          ...prev,
+          ...data.user
+        }));
 
+        return {
+          success: true,
+          user: data.user
+        };
+      }
+
+      return {
+        success: false,
+        message:
+          'Failed to update profile'
+      };
+
+    } catch (error) {
       console.error(
         'Update profile error:',
         error
       );
 
+      return {
+        success: false,
+        message:
+          'Unable to connect to server'
+      };
     }
-
   };
+  // ==========================================
+  // RECENTLY LIKED POSTS
+  // ==========================================
 
-  // =====================================================
-  // RESET DATA
-  // =====================================================
+  const likedPosts = posts
+    .filter(post => post.isLiked === true)
+    .sort((a, b) => {
+      const dateA = new Date(
+        a.updatedAt || a.createdAt || 0
+      );
 
-  const handleResetData = () => {
+      const dateB = new Date(
+        b.updatedAt || b.createdAt || 0
+      );
 
-    setUser(
-      INITIAL_USER
-    );
-
-    setAnnouncements(
-      INITIAL_ANNOUNCEMENTS
-    );
-
-    setEvents(
-      INITIAL_EVENTS
-    );
-
-    setHackathons(
-      INITIAL_HACKATHONS
-    );
-
-    setClubs(
-      INITIAL_CLUBS
-    );
-
-    setPosts(
-      INITIAL_POSTS
-    );
-
-    setClubPosts([]);
-
-    setSearchQuery('');
-
-  };
-
-  // =====================================================
+      return dateB - dateA;
+    });
+  // ==========================================
   // REGISTERED EVENTS
-  // =====================================================
+  // ==========================================
 
   const registeredEvents = [
-
     ...events.filter(
-      e => e.isRegistered
+      event => event.isRegistered
     ),
 
     ...hackathons
       .filter(
-        h => h.isRegistered
+        hackathon =>
+          hackathon.isRegistered
       )
-      .map(h => ({
-
-        id:
-          h.id,
-
-        title:
-          h.title,
-
+      .map(hackathon => ({
+        id: hackathon.id,
+        title: hackathon.title,
         description:
-          h.description,
-
-        date:
-          h.date,
-
-        time:
-          h.type,
-
-        location:
-          h.scope,
-
+          hackathon.description,
+        date: hackathon.date,
+        time: hackathon.type,
+        location: hackathon.scope,
         category:
-          h.category,
-
+          hackathon.category,
         isRegistered:
-          h.isRegistered,
+          hackathon.isRegistered,
 
         imagePlaceholderColor:
           'from-amber-600 to-yellow-600'
-
       }))
-
   ];
 
-  // =====================================================
+  // ==========================================
   // LOADING SCREEN
-  // =====================================================
+  // ==========================================
 
   const LoadingScreen = () => {
-
     return (
-
       <div className="min-h-screen bg-[#0a0f1d] flex items-center justify-center text-gray-100">
-
         <div className="text-center">
-
           <div className="w-10 h-10 border-4 border-gray-600 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
 
           <p>
             Checking authentication...
           </p>
-
         </div>
-
       </div>
-
     );
-
   };
 
-  // =====================================================
+  // ==========================================
   // PROTECTED LAYOUT
-  // =====================================================
+  // ==========================================
 
   const ProtectedLayout = ({
     children
   }) => {
-
     if (authLoading) {
-
       return <LoadingScreen />;
-
     }
 
     if (!isLoggedIn) {
-
       return (
         <Navigate
           to="/login"
           replace
         />
       );
-
     }
 
     return (
-
-      <div className="flex bg-[#0a0f1d] min-h-screen text-gray-100">
-
+      <div
+        className={
+          theme === 'dark'
+            ? 'flex bg-[#0a0f1d] min-h-screen text-gray-100'
+            : 'flex bg-gray-100 min-h-screen text-gray-900'
+        }
+      >
         <Sidebar
           activeView={activeView}
           onViewChange={handleViewChange}
           onLogout={handleLogout}
           isLoggedIn={isLoggedIn}
+          theme={theme}
         />
 
         <div className="flex-1 flex flex-col min-w-0 pb-20 md:pb-6">
-
           <Header
             user={user}
             activeView={activeView}
@@ -1598,12 +1467,11 @@ function AppContent() {
             isLoggedIn={isLoggedIn}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            theme={theme}
           />
 
           <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
-
             <AnimatePresence mode="wait">
-
               <motion.div
                 key={location.pathname}
                 initial={{
@@ -1622,130 +1490,57 @@ function AppContent() {
                   duration: 0.2
                 }}
               >
-
                 {children}
-
               </motion.div>
-
             </AnimatePresence>
-
           </main>
-
         </div>
-
       </div>
-
     );
-
   };
 
-  // =====================================================
+  // ==========================================
   // ROUTES
-  // =====================================================
+  // ==========================================
 
   return (
-
     <Routes>
 
       <Route
         path="/"
         element={
-
           authLoading ? (
-
             <LoadingScreen />
-
           ) : (
-
-            <AnimatePresence mode="wait">
-
-              <motion.div
-                key="landing"
-                initial={{
-                  opacity: 0
-                }}
-                animate={{
-                  opacity: 1
-                }}
-                exit={{
-                  opacity: 0
-                }}
-                transition={{
-                  duration: 0.4
-                }}
-              >
-
-                <LandingView
-                  onNavigate={
-                    handleViewChange
-                  }
-                />
-
-              </motion.div>
-
-            </AnimatePresence>
-
+            <LandingView
+              onNavigate={handleViewChange}
+            />
           )
-
         }
       />
 
       <Route
         path="/login"
         element={
-
           authLoading ? (
-
             <LoadingScreen />
-
           ) : (
-
-            <AnimatePresence mode="wait">
-
-              <motion.div
-                key="login"
-                initial={{
-                  opacity: 0,
-                  y: 15
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0
-                }}
-                exit={{
-                  opacity: 0,
-                  y: -15
-                }}
-                transition={{
-                  duration: 0.3
-                }}
-              >
-
-                <LoginView
-                  onLoginSuccess={
-                    handleLoginSuccess
-                  }
-
-                  onNavigateBack={() =>
-                    navigate('/')
-                  }
-                />
-
-              </motion.div>
-
-            </AnimatePresence>
-
+            <LoginView
+              onLoginSuccess={
+                handleLoginSuccess
+              }
+              onNavigateBack={() =>
+                navigate('/')
+              }
+            />
           )
-
         }
       />
 
       <Route
         path="/dashboard"
         element={
-
           <ProtectedLayout>
-
             <DashboardView
               user={user}
               announcements={announcements}
@@ -1753,172 +1548,122 @@ function AppContent() {
               hackathons={hackathons}
               clubs={clubs}
               posts={posts}
-              onNavigate={
-                handleViewChange
-              }
-              onRegisterEvent={
-                handleRegisterEvent
-              }
-              onJoinClub={
-                handleJoinClub
-              }
-              searchQuery={
-                searchQuery
-              }
+              onNavigate={handleViewChange}
+              onRegisterEvent={handleRegisterEvent}
+              onJoinClub={handleJoinClub}
+              searchQuery={searchQuery}
             />
-
           </ProtectedLayout>
-
         }
       />
 
       <Route
         path="/community"
         element={
-
           <ProtectedLayout>
-
             <CommunityFeedView
               user={user}
               posts={posts}
-              onAddPost={
-                handleAddPost
-              }
-              onLikePost={
-                handleLikePost
-              }
-              onAddComment={
-                handleAddComment
-              }
-              onDeletePost={
-                handleDeletePost
-              }
-              onDeleteComment={
-                handleDeleteComment
-              }
-              searchQuery={
-                searchQuery
+              onAddPost={handleAddPost}
+              onLikePost={handleLikePost}
+              onAddComment={handleAddComment}
+              onDeletePost={handleDeletePost}
+              onDeleteComment={handleDeleteComment}
+              searchQuery={searchQuery}
+              showRecentlyLikedPosts={
+                showRecentlyLikedPosts
               }
             />
-
           </ProtectedLayout>
-
         }
       />
 
       <Route
         path="/announcements"
         element={
-
           <ProtectedLayout>
-
             <AnnouncementsView
               currentUser={user}
               announcements={announcements}
-              onAddAnnouncement={handleAddAnnouncement}
-              onDeleteAnnouncement={handleDeleteAnnouncement}
+              onAddAnnouncement={
+                handleAddAnnouncement
+              }
+              onDeleteAnnouncement={
+                handleDeleteAnnouncement
+              }
               searchQuery={searchQuery}
             />
-
           </ProtectedLayout>
-
         }
       />
 
       <Route
         path="/events"
         element={
-
           <ProtectedLayout>
-
             <EventsView
-              events={
-                events
-              }
+              events={events}
               onRegisterEvent={
                 handleRegisterEvent
               }
-              searchQuery={
-                searchQuery
-              }
+              searchQuery={searchQuery}
             />
-
           </ProtectedLayout>
-
         }
       />
-
-      {/* =================================================
-          HACKATHONS AND CLUBS
-          CONNECTED TO NEW CLUB POSTS BACKEND
-      ================================================= */}
 
       <Route
         path="/hackathons"
         element={
-
           <ProtectedLayout>
-
             <HackathonsView
               currentUser={user}
               clubPosts={clubPosts}
-              onCreateClubPost={handleCreateClubPost}
-              onDeleteClubPost={handleDeleteClubPost}
+              onCreateClubPost={
+                handleCreateClubPost
+              }
+              onDeleteClubPost={
+                handleDeleteClubPost
+              }
               searchQuery={searchQuery}
-
               hackathons={hackathons}
               clubs={clubs}
-              onRegisterHackathon={handleRegisterHackathon}
+              onRegisterHackathon={
+                handleRegisterHackathon
+              }
               onJoinClub={handleJoinClub}
             />
-
           </ProtectedLayout>
-
         }
       />
 
       <Route
         path="/profile"
         element={
-
           <ProtectedLayout>
-
             <ProfileView
-              user={
-                user
-              }
-              onUpdateUser={
-                handleUpdateUser
-              }
-              joinedClubs={
-                clubs.filter(
-                  c => c.isJoined
-                )
-              }
+              user={user}
+              onUpdateUser={handleUpdateUser}
               registeredEvents={
                 registeredEvents
               }
             />
-
           </ProtectedLayout>
-
         }
       />
 
       <Route
         path="/settings"
         element={
-
           <ProtectedLayout>
-
             <SettingsView
-              onResetData={
-                handleResetData
-              }
+              theme={theme}
+              onThemeChange={setTheme}
+              likedPosts={likedPosts}
+              onNavigate={handleViewChange}
+              onDeleteAccount={handleDeleteAccount}
             />
-
           </ProtectedLayout>
-
         }
       />
 
@@ -1933,7 +1678,5 @@ function AppContent() {
       />
 
     </Routes>
-
   );
-
 }

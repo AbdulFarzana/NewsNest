@@ -8,15 +8,20 @@ const {
   login,
   logout,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  getMe,
+  updateProfile,
+  deleteAccount
 } = require("../controller/authController");
 
-const protect =
-  require("../middleware/authmiddleware");
+const protect = require("../middleware/authmiddleware");
 
-// ==========================================
+const upload = require("../middleware/profileUpload");
+
+
+// ========================================
 // AUTH ROUTES
-// ==========================================
+// ========================================
 
 router.post(
   "/register",
@@ -48,38 +53,39 @@ router.post(
   resetPassword
 );
 
-// ==========================================
-// CURRENT LOGGED-IN USER
-// ==========================================
+
+// ========================================
+// GET CURRENT USER
+// ========================================
 
 router.get(
   "/me",
   protect,
-  async (req, res) => {
-    return res.status(200).json({
-      success: true,
-
-      user: {
-        id:
-          req.user._id,
-
-        name:
-          req.user.name,
-
-        email:
-          req.user.email,
-
-        role:
-          req.user.role,
-
-        avatar:
-          req.user.avatar,
-
-        avatarUrl:
-          req.user.avatarUrl
-      }
-    });
-  }
+  getMe
 );
+
+
+// ========================================
+// UPDATE PROFILE
+// ========================================
+
+router.put(
+  "/profile",
+  protect,
+  upload.single("avatar"),
+  updateProfile
+);
+
+
+// ========================================
+// DELETE ACCOUNT
+// ========================================
+
+router.delete(
+  "/delete-account",
+  protect,
+  deleteAccount
+);
+
 
 module.exports = router;

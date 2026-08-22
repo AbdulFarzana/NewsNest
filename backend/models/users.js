@@ -4,16 +4,13 @@ const userSchema = new mongoose.Schema(
     {
         name: {
             type: String,
-            required: true,
-            trim: true
+            required: true
         },
 
         email: {
             type: String,
             required: true,
-            unique: true,
-            lowercase: true,
-            trim: true
+            unique: true
         },
 
         password: {
@@ -23,13 +20,48 @@ const userSchema = new mongoose.Schema(
 
         role: {
             type: String,
-            enum: ["student", "faculty", "admin"],
-            default: "student"
+            default: 'student'
+        },
+
+        phone: {
+            type: String,
+            default: ''
+        },
+
+        rollNumber: {
+            type: String,
+            default: ''
+        },
+
+        location: {
+            type: String,
+            default: ''
+        },
+
+        department: {
+            type: String,
+            default: ''
+        },
+
+        year: {
+            type: String,
+            default: ''
+        },
+
+        interestedClubs: {
+            type: [
+                {
+                    id: String,
+                    name: String,
+                    category: String
+                }
+            ],
+            default: []
         },
 
         avatar: {
             type: String,
-            default: ""
+            default: ''
         }
     },
     {

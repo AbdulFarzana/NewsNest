@@ -6,7 +6,6 @@ import {
   Trash2,
   Image,
   X,
-  MoreHorizontal,
   Users,
   Plus
 } from 'lucide-react';
@@ -33,6 +32,93 @@ const CommunityFeedView = ({
 
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // =====================================================
+  // GET POST ID
+  // Supports both MongoDB _id and frontend id
+  // =====================================================
+
+  const getPostId = (post) => {
+    return post?._id || post?.id;
+  };
+
+  // =====================================================
+  // GET COMMENT ID
+  // =====================================================
+
+  const getCommentId = (comment) => {
+    return comment?._id || comment?.id;
+  };
+
+  // =====================================================
+  // GET LIKE COUNT
+  // Supports:
+  // likes: 5
+  // likes: [userIds]
+  // likesCount: 5
+  // =====================================================
+
+  const getLikeCount = (post) => {
+
+    if (typeof post?.likes === 'number') {
+      return post.likes;
+    }
+
+    if (Array.isArray(post?.likes)) {
+      return post.likes.length;
+    }
+
+    if (typeof post?.likesCount === 'number') {
+      return post.likesCount;
+    }
+
+    return 0;
+  };
+
+  // =====================================================
+  // CHECK IF POST IS LIKED
+  // =====================================================
+
+  const isPostLiked = (post) => {
+
+    if (typeof post?.isLiked === 'boolean') {
+      return post.isLiked;
+    }
+
+    const currentUserId =
+      user?.id ||
+      user?._id;
+
+    if (
+      Array.isArray(post?.likes) &&
+      currentUserId
+    ) {
+
+      return post.likes.some(like => {
+
+        if (!like) {
+          return false;
+        }
+
+        const likeUserId =
+          typeof like === 'object'
+            ? (
+              like._id ||
+              like.id ||
+              like.user ||
+              like.userId
+            )
+            : like;
+
+        return String(likeUserId) ===
+          String(currentUserId);
+
+      });
+
+    }
+
+    return false;
+  };
 
   // =====================================================
   // CREATE POST
@@ -191,7 +277,18 @@ const CommunityFeedView = ({
       return;
     }
 
-    await onDeletePost(postId);
+    try {
+
+      await onDeletePost(postId);
+
+    } catch (error) {
+
+      console.error(
+        'Delete post error:',
+        error
+      );
+
+    }
 
   };
 
@@ -213,10 +310,21 @@ const CommunityFeedView = ({
       return;
     }
 
-    await onDeleteComment(
-      postId,
-      commentId
-    );
+    try {
+
+      await onDeleteComment(
+        postId,
+        commentId
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Delete comment error:',
+        error
+      );
+
+    }
 
   };
 
@@ -275,6 +383,7 @@ const CommunityFeedView = ({
           .trim();
 
       return (
+
         post.content
           ?.toLowerCase()
           .includes(query) ||
@@ -290,6 +399,7 @@ const CommunityFeedView = ({
         post.clubName
           ?.toLowerCase()
           .includes(query)
+
       );
 
     });
@@ -312,16 +422,31 @@ const CommunityFeedView = ({
 
     if (
       !currentUserId ||
-      !post?.user
+      !post
     ) {
 
       return false;
 
     }
 
+    const postUserId =
+      typeof post.user === 'object'
+        ? (
+          post.user?._id ||
+          post.user?.id
+        )
+        : (
+          post.user ||
+          post.userId
+        );
+
+    if (!postUserId) {
+      return false;
+    }
+
     return (
-      post.user.toString() ===
-      currentUserId.toString()
+      String(postUserId) ===
+      String(currentUserId)
     );
 
   };
@@ -336,16 +461,31 @@ const CommunityFeedView = ({
 
     if (
       !currentUserId ||
-      !comment?.user
+      !comment
     ) {
 
       return false;
 
     }
 
+    const commentUserId =
+      typeof comment.user === 'object'
+        ? (
+          comment.user?._id ||
+          comment.user?.id
+        )
+        : (
+          comment.user ||
+          comment.userId
+        );
+
+    if (!commentUserId) {
+      return false;
+    }
+
     return (
-      comment.user.toString() ===
-      currentUserId.toString()
+      String(commentUserId) ===
+      String(currentUserId)
     );
 
   };
@@ -378,6 +518,7 @@ const CommunityFeedView = ({
   // =====================================================
 
   return (
+
     <div className="w-full max-w-4xl mx-auto space-y-6">
 
       {/* =================================================
@@ -472,13 +613,9 @@ const CommunityFeedView = ({
           </div>
 
           <form
-            onSubmit={
-              handleCreatePost
-            }
+            onSubmit={handleCreatePost}
             className="space-y-4"
           >
-
-            {/* CONTENT */}
 
             <textarea
               value={postContent}
@@ -491,8 +628,6 @@ const CommunityFeedView = ({
               rows={5}
               className="w-full bg-[#0a0f1d] border border-gray-700 rounded-xl p-4 text-white placeholder-gray-500 resize-none focus:outline-none focus:border-indigo-500"
             />
-
-            {/* CATEGORY */}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -512,33 +647,13 @@ const CommunityFeedView = ({
                   className="w-full bg-[#0a0f1d] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
                 >
 
-                  <option>
-                    General Discussion
-                  </option>
-
-                  <option>
-                    Academics
-                  </option>
-
-                  <option>
-                    Events
-                  </option>
-
-                  <option>
-                    Placements
-                  </option>
-
-                  <option>
-                    Clubs
-                  </option>
-
-                  <option>
-                    Technology
-                  </option>
-
-                  <option>
-                    Achievements
-                  </option>
+                  <option>General Discussion</option>
+                  <option>Academics</option>
+                  <option>Events</option>
+                  <option>Placements</option>
+                  <option>Clubs</option>
+                  <option>Technology</option>
+                  <option>Achievements</option>
 
                 </select>
 
@@ -565,8 +680,6 @@ const CommunityFeedView = ({
               </div>
 
             </div>
-
-            {/* IMAGE */}
 
             {showImageInput && (
 
@@ -664,405 +777,412 @@ const CommunityFeedView = ({
 
         )}
 
-        {filteredPosts.map(post => (
+        {filteredPosts.map(post => {
 
-          <article
-            key={post.id}
-            className="bg-[#111827] border border-gray-800 rounded-2xl overflow-hidden shadow-lg"
-          >
+          const postId = getPostId(post);
+          const likeCount = getLikeCount(post);
+          const liked = isPostLiked(post);
 
-            {/* =================================================
-                POST HEADER
-            ================================================= */}
+          return (
 
-            <div className="p-5">
+            <article
+              key={postId}
+              className="bg-[#111827] border border-gray-800 rounded-2xl overflow-hidden shadow-lg"
+            >
 
-              <div className="flex items-start justify-between gap-3">
+              <div className="p-5">
 
-                <div className="flex items-center gap-3">
+                {/* POST HEADER */}
 
-                  {post.userAvatar ? (
+                <div className="flex items-start justify-between gap-3">
 
-                    <img
-                      src={post.userAvatar}
-                      alt={
-                        post.userName ||
-                        'User'
+                  <div className="flex items-center gap-3">
+
+                    {post.userAvatar ? (
+
+                      <img
+                        src={post.userAvatar}
+                        alt={
+                          post.userName ||
+                          'User'
+                        }
+                        className="w-11 h-11 rounded-full object-cover border border-gray-700"
+                      />
+
+                    ) : (
+
+                      <div className="w-11 h-11 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+
+                        {getInitials(
+                          post.userName
+                        )}
+
+                      </div>
+
+                    )}
+
+                    <div>
+
+                      <h3 className="font-semibold text-white">
+
+                        {post.userName ||
+                          'Unknown User'}
+
+                      </h3>
+
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+
+                        <span>
+                          {post.userRole ||
+                            'Student'}
+                        </span>
+
+                        <span>•</span>
+
+                        <span>
+                          {formatDate(
+                            post.publishedAt ||
+                            post.createdAt
+                          )}
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  {isPostOwner(post) && (
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeletePost(
+                          postId
+                        )
                       }
-                      className="w-11 h-11 rounded-full object-cover border border-gray-700"
-                    />
+                      className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                      title="Delete post"
+                    >
 
-                  ) : (
+                      <Trash2 size={18} />
 
-                    <div className="w-11 h-11 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+                    </button>
 
-                      {getInitials(
-                        post.userName
+                  )}
+
+                </div>
+
+                {/* CATEGORY / CLUB */}
+
+                <div className="flex flex-wrap gap-2 mt-4">
+
+                  {post.category && (
+
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+
+                      {post.category}
+
+                    </span>
+
+                  )}
+
+                  {post.clubName && (
+
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-300 border border-purple-500/20">
+
+                      {post.clubName}
+
+                    </span>
+
+                  )}
+
+                </div>
+
+                {/* CONTENT */}
+
+                <p className="mt-4 text-gray-200 leading-7 whitespace-pre-wrap break-words">
+
+                  {post.content}
+
+                </p>
+
+                {/* IMAGES */}
+
+                {post.images &&
+                  post.images.length > 0 && (
+
+                    <div className="mt-4 space-y-3">
+
+                      {post.images.map(
+                        (image, index) => (
+
+                          <img
+                            key={`${postId}-${index}`}
+                            src={image}
+                            alt="Post attachment"
+                            className="w-full max-h-[500px] object-cover rounded-xl border border-gray-800"
+                            onError={e => {
+                              e.currentTarget.style.display =
+                                'none';
+                            }}
+                          />
+
+                        )
                       )}
 
                     </div>
 
                   )}
 
-                  <div>
+                {/* ACTIONS */}
 
-                    <div className="flex items-center gap-2">
-
-                      <h3 className="font-semibold text-white">
-                        {post.userName ||
-                          'Unknown User'}
-                      </h3>
-
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-
-                      <span>
-                        {post.userRole ||
-                          'Student'}
-                      </span>
-
-                      <span>
-                        •
-                      </span>
-
-                      <span>
-                        {formatDate(
-                          post.publishedAt
-                        )}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-                {/* DELETE POST */}
-
-                {isPostOwner(post) && (
+                <div className="flex items-center gap-6 mt-5 pt-4 border-t border-gray-800">
 
                   <button
                     type="button"
                     onClick={() =>
-                      handleDeletePost(
-                        post.id
+                      onLikePost(
+                        postId
                       )
                     }
-                    className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition"
-                    title="Delete post"
+                    className={`inline-flex items-center gap-2 text-sm transition ${liked
+                      ? 'text-pink-400'
+                      : 'text-gray-400 hover:text-pink-400'
+                      }`}
                   >
 
-                    <Trash2
-                      size={18}
+                    <Heart
+                      size={19}
+                      fill={
+                        liked
+                          ? 'currentColor'
+                          : 'none'
+                      }
                     />
+
+                    <span>
+                      {likeCount}
+                    </span>
 
                   </button>
 
-                )}
-
-              </div>
-
-              {/* =================================================
-                  CATEGORY / CLUB
-              ================================================= */}
-
-              <div className="flex flex-wrap gap-2 mt-4">
-
-                {post.category && (
-
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                    {post.category}
-                  </span>
-
-                )}
-
-                {post.clubName && (
-
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                    {post.clubName}
-                  </span>
-
-                )}
-
-              </div>
-
-              {/* =================================================
-                  CONTENT
-              ================================================= */}
-
-              <p className="mt-4 text-gray-200 leading-7 whitespace-pre-wrap break-words">
-                {post.content}
-              </p>
-
-              {/* =================================================
-                  IMAGES
-              ================================================= */}
-
-              {post.images &&
-                post.images.length > 0 && (
-
-                  <div className="mt-4 space-y-3">
-
-                    {post.images.map(
-                      (image, index) => (
-
-                        <img
-                          key={`${post.id}-${index}`}
-                          src={image}
-                          alt="Post attachment"
-                          className="w-full max-h-[500px] object-cover rounded-xl border border-gray-800"
-                          onError={e => {
-                            e.currentTarget.style.display =
-                              'none';
-                          }}
-                        />
-
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleComments(
+                        postId
                       )
-                    )}
-
-                  </div>
-
-                )}
-
-              {/* =================================================
-                  ACTIONS
-              ================================================= */}
-
-              <div className="flex items-center gap-6 mt-5 pt-4 border-t border-gray-800">
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    onLikePost(
-                      post.id
-                    )
-                  }
-                  className={`inline-flex items-center gap-2 text-sm transition ${post.isLiked
-                    ? 'text-pink-400'
-                    : 'text-gray-400 hover:text-pink-400'
-                    }`}
-                >
-
-                  <Heart
-                    size={19}
-                    fill={
-                      post.isLiked
-                        ? 'currentColor'
-                        : 'none'
                     }
-                  />
+                    className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-400 transition"
+                  >
 
-                  <span>
-                    {post.likes || 0}
-                  </span>
+                    <MessageCircle
+                      size={19}
+                    />
 
-                </button>
+                    <span>
+                      {post.comments?.length ||
+                        0}
+                    </span>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    toggleComments(
-                      post.id
-                    )
-                  }
-                  className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-400 transition"
-                >
+                    <span className="hidden sm:inline">
+                      Comments
+                    </span>
 
-                  <MessageCircle
-                    size={19}
-                  />
+                  </button>
 
-                  <span>
-                    {post.comments?.length ||
-                      0}
-                  </span>
-
-                  <span className="hidden sm:inline">
-                    Comments
-                  </span>
-
-                </button>
+                </div>
 
               </div>
 
-            </div>
+              {/* COMMENTS */}
 
-            {/* =================================================
-                COMMENTS
-            ================================================= */}
+              {expandedComments[
+                postId
+              ] && (
 
-            {expandedComments[
-              post.id
-            ] && (
+                  <div className="border-t border-gray-800 bg-[#0d1422]">
 
-                <div className="border-t border-gray-800 bg-[#0d1422]">
+                    {post.comments &&
+                      post.comments.length > 0 && (
 
-                  {/* COMMENT LIST */}
+                        <div className="p-5 space-y-4">
 
-                  {post.comments &&
-                    post.comments.length > 0 && (
+                          {post.comments.map(
+                            comment => {
 
-                      <div className="p-5 space-y-4">
+                              const commentId =
+                                getCommentId(comment);
 
-                        {post.comments.map(
-                          comment => (
+                              return (
 
-                            <div
-                              key={
-                                comment.id
-                              }
-                              className="flex gap-3"
-                            >
+                                <div
+                                  key={commentId}
+                                  className="flex gap-3"
+                                >
 
-                              <div className="w-9 h-9 shrink-0 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
+                                  <div className="w-9 h-9 shrink-0 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
 
-                                {getInitials(
-                                  comment.userName
-                                )}
+                                    {getInitials(
+                                      comment.userName
+                                    )}
 
-                              </div>
+                                  </div>
 
-                              <div className="flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0">
 
-                                <div className="bg-[#111827] rounded-xl px-4 py-3">
+                                    <div className="bg-[#111827] rounded-xl px-4 py-3">
 
-                                  <div className="flex items-start justify-between gap-2">
+                                      <div className="flex items-start justify-between gap-2">
 
-                                    <div>
+                                        <div>
 
-                                      <p className="text-sm font-semibold text-white">
-                                        {comment.userName ||
-                                          'User'}
-                                      </p>
+                                          <p className="text-sm font-semibold text-white">
 
-                                      <p className="text-xs text-gray-500 mt-0.5">
-                                        {comment.userRole ||
-                                          'Student'}
+                                            {comment.userName ||
+                                              'User'}
+
+                                          </p>
+
+                                          <p className="text-xs text-gray-500 mt-0.5">
+
+                                            {comment.userRole ||
+                                              'Student'}
+
+                                          </p>
+
+                                        </div>
+
+                                        {isCommentOwner(
+                                          comment
+                                        ) && (
+
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleDeleteComment(
+                                                  postId,
+                                                  commentId
+                                                )
+                                              }
+                                              className="text-gray-600 hover:text-red-400 transition"
+                                              title="Delete comment"
+                                            >
+
+                                              <Trash2
+                                                size={15}
+                                              />
+
+                                            </button>
+
+                                          )}
+
+                                      </div>
+
+                                      <p className="text-sm text-gray-300 mt-2 whitespace-pre-wrap break-words">
+
+                                        {comment.content}
+
                                       </p>
 
                                     </div>
 
-                                    {isCommentOwner(
-                                      comment
-                                    ) && (
+                                    <p className="text-[11px] text-gray-600 mt-1 ml-2">
 
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleDeleteComment(
-                                              post.id,
-                                              comment.id
-                                            )
-                                          }
-                                          className="text-gray-600 hover:text-red-400 transition"
-                                          title="Delete comment"
-                                        >
-
-                                          <Trash2
-                                            size={15}
-                                          />
-
-                                        </button>
-
+                                      {formatDate(
+                                        comment.publishedAt ||
+                                        comment.createdAt
                                       )}
+
+                                    </p>
 
                                   </div>
 
-                                  <p className="text-sm text-gray-300 mt-2 whitespace-pre-wrap break-words">
-                                    {comment.content}
-                                  </p>
-
                                 </div>
 
-                                <p className="text-[11px] text-gray-600 mt-1 ml-2">
-                                  {formatDate(
-                                    comment.publishedAt
-                                  )}
-                                </p>
+                              );
 
-                              </div>
+                            }
+                          )}
 
-                            </div>
+                        </div>
 
-                          )
-                        )}
+                      )}
 
-                      </div>
+                    {(!post.comments ||
+                      post.comments.length === 0) && (
 
-                    )}
+                        <div className="px-5 pt-5 text-sm text-gray-500">
 
-                  {/* NO COMMENTS */}
+                          No comments yet. Start the conversation.
 
-                  {(!post.comments ||
-                    post.comments.length === 0) && (
+                        </div>
 
-                      <div className="px-5 pt-5 text-sm text-gray-500">
-                        No comments yet. Start the conversation.
-                      </div>
+                      )}
 
-                    )}
+                    {/* COMMENT INPUT */}
 
-                  {/* COMMENT INPUT */}
+                    <div className="p-5">
 
-                  <div className="p-5">
+                      <div className="flex items-center gap-3">
 
-                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 shrink-0 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
 
-                      <div className="w-9 h-9 shrink-0 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+                          {getInitials(
+                            user?.name
+                          )}
 
-                        {getInitials(
-                          user?.name
-                        )}
+                        </div>
 
-                      </div>
+                        <div className="flex-1 relative">
 
-                      <div className="flex-1 relative">
-
-                        <input
-                          type="text"
-                          value={
-                            commentInputs[
-                            post.id
-                            ] || ''
-                          }
-                          onChange={e =>
-                            handleCommentChange(
-                              post.id,
-                              e.target.value
-                            )
-                          }
-                          onKeyDown={e =>
-                            handleCommentKeyDown(
-                              e,
-                              post.id
-                            )
-                          }
-                          placeholder="Write a comment..."
-                          className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSubmitComment(
-                              post.id
-                            )
-                          }
-                          disabled={
-                            !commentInputs[
-                              post.id
-                            ]?.trim()
-                          }
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-indigo-400 hover:bg-indigo-500/10 disabled:text-gray-600 disabled:cursor-not-allowed transition"
-                          title="Send comment"
-                        >
-
-                          <Send
-                            size={17}
+                          <input
+                            type="text"
+                            value={
+                              commentInputs[
+                              postId
+                              ] || ''
+                            }
+                            onChange={e =>
+                              handleCommentChange(
+                                postId,
+                                e.target.value
+                              )
+                            }
+                            onKeyDown={e =>
+                              handleCommentKeyDown(
+                                e,
+                                postId
+                              )
+                            }
+                            placeholder="Write a comment..."
+                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
                           />
 
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSubmitComment(
+                                postId
+                              )
+                            }
+                            disabled={
+                              !commentInputs[
+                                postId
+                              ]?.trim()
+                            }
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-indigo-400 hover:bg-indigo-500/10 disabled:text-gray-600 disabled:cursor-not-allowed transition"
+                            title="Send comment"
+                          >
+
+                            <Send
+                              size={17}
+                            />
+
+                          </button>
+
+                        </div>
 
                       </div>
 
@@ -1070,18 +1190,20 @@ const CommunityFeedView = ({
 
                   </div>
 
-                </div>
+                )}
 
-              )}
+            </article>
 
-          </article>
+          );
 
-        ))}
+        })}
 
       </div>
 
     </div>
+
   );
+
 };
 
 export default CommunityFeedView;
