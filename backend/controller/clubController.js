@@ -95,7 +95,7 @@ const formatPost = (
             post.registrationLink,
 
         image: post.image
-            ? `http://localhost:5000/api/clubs/${post._id}/image`
+            ? `https://news-nest-eta.vercel.app/api/clubs/${post._id}/image`
             : null,
 
         user: postUserId,

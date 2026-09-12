@@ -15,7 +15,7 @@ import {
   Link as LinkIcon
 } from "lucide-react";
 
-const API_URL = "http://localhost:5000/api/events";
+const API_URL = "https://news-nest-eta.vercel.app/api/events";
 
 export default function EventsView({
   currentUser,

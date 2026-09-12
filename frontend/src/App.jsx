@@ -33,7 +33,7 @@ import {
   INITIAL_POSTS
 } from './data';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://news-nest-eta.vercel.app';
 
 const VIEW_TO_PATH = {
   LANDING: '/',
