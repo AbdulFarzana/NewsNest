@@ -33,7 +33,7 @@ import {
   INITIAL_POSTS
 } from './data';
 
-const API_BASE_URL = 'https://newsnest-74bb.onrender.com/';
+const API_BASE_URL = 'https://newsnest-74bb.onrender.com';
 
 const VIEW_TO_PATH = {
   LANDING: '/',
