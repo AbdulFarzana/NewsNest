@@ -13,8 +13,8 @@ import {
   FileImage
 } from "lucide-react";
 
-const API_URL = "https://news-nest-eta.vercel.app/api/announcements";
-const SERVER_URL = "https://news-nest-eta.vercel.app";
+const API_URL = "https://newsnest-74bb.onrender.com/api/announcements";
+const SERVER_URL = "https://newsnest-74bb.onrender.com";
 
 export default function AnnouncementsView({
   currentUser,

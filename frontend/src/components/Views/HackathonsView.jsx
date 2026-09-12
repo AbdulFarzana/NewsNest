@@ -26,8 +26,8 @@ import {
   Info
 } from "lucide-react";
 
-const API_URL = "https://news-nest-eta.vercel.app/api/clubs";
-const SERVER_URL = "https://news-nest-eta.vercel.app";
+const API_URL = "https://newsnest-74bb.onrender.com/api/clubs";
+const SERVER_URL = "https://newsnest-74bb.onrender.com";
 
 export default function HackathonsView({
   currentUser,

@@ -8,7 +8,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 
-const API_BASE_URL = "https://news-nest-eta.vercel.app";
+const API_BASE_URL = "https://newsnest-74bb.onrender.com";
 
 export default function LoginView({ onLoginSuccess }) {
 
