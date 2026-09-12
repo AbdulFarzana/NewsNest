@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Announcement = require("../models/announcement");
+const Announcement = require("../models/Announcement");
 
 const getBucket = () => {
     const db = mongoose.connection.db;
