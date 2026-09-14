@@ -1,5 +1,10 @@
 const { BrevoClient } = require("@getbrevo/brevo");
 
+console.log(
+    "Brevo API Key loaded:",
+    process.env.BREVO_API_KEY ? "YES" : "NO"
+);
+
 const brevo = new BrevoClient({
     apiKey: process.env.BREVO_API_KEY
 });
