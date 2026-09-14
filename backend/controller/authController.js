@@ -474,18 +474,14 @@ const login = async (req, res) => {
 
 const logout = (req, res) => {
 
-    res.cookie(
-        "token",
-        "",
-        {
-
-            httpOnly: true,
-
-            expires:
-                new Date(0)
-
-        }
-    );
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite:
+            process.env.NODE_ENV === "production"
+                ? "none"
+                : "lax"
+    });
 
     return res.status(200).json({
         message: "Logout successful"
@@ -1007,7 +1003,14 @@ const deleteAccount = async (req, res) => {
 
         await User.findByIdAndDelete(userId);
 
-        res.clearCookie('token');
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite:
+                process.env.NODE_ENV === "production"
+                    ? "none"
+                    : "lax"
+        });
 
         res.status(200).json({
             success: true,
